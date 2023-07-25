@@ -830,13 +830,11 @@ async def experiment_stop(q: Q, experiment_ids: List[int]) -> None:
         experiment = q.client.app_db.get_experiment(experiment_id)
 
         try:
-            ret = kill_child_processes(int(experiment.process_id))
-            if ret:
+            if ret := kill_child_processes(int(experiment.process_id)):
                 flag_path = os.path.join(experiment.path, "flags.json")
                 write_flag(flag_path, "status", "stopped")
         except Exception as e:
             logger.error(f"Error while stopping the experiment: {e}")
-            pass
 
 
 def load_charts(experiment_path):
@@ -867,11 +865,10 @@ async def experiment_display(q: Q) -> None:
     charts = load_charts(q.client["experiment/display/experiment_path"])
     q.client["experiment/display/charts"] = charts
 
-    if experiment.mode == "train":
-        if q.client["experiment/display/tab"] is None:
+    if q.client["experiment/display/tab"] is None:
+        if experiment.mode == "train":
             q.client["experiment/display/tab"] = "experiment/display/charts"
-    else:
-        if q.client["experiment/display/tab"] is None:
+        else:
             q.client["experiment/display/tab"] = "experiment/display/summary"
 
     if q.args["experiment/display/charts"] is not None:
@@ -1033,8 +1030,7 @@ async def summary_tab(experiment_id, q):
     cfg = load_config_yaml(
         os.path.join(q.client["experiment/display/experiment_path"], "cfg.yaml")
     )
-    parent_element = get_parent_element(cfg)
-    if parent_element:
+    if parent_element := get_parent_element(cfg):
         items.append(parent_element)
     for col in experiment_df.columns:
         if col in [
@@ -1074,11 +1070,11 @@ async def configs_tab(q):
 async def logs_tab(q):
     logs_path = f"{q.client['experiment/display/experiment_path']}/logs.log"
     text = ""
-    in_pre = 0
     # Read log file only if it already exists
     if os.path.exists(logs_path):
+        in_pre = 0
         with open(logs_path, "r") as f:
-            for line in f.readlines():
+            for line in f:
                 if in_pre == 0:
                     text += "<div>"
                 if "INFO: Lock" in line:
@@ -1118,7 +1114,7 @@ def unite_validation_metric_charts(charts_list):
     for chart in charts_list:
         unique_metrics.extend(list(chart.get("validation", {}).keys()))
 
-    unique_metrics = set([key for key in unique_metrics if key != "loss"])
+    unique_metrics = {key for key in unique_metrics if key != "loss"}
 
     if len(unique_metrics) > 1:
         for chart in charts_list:
@@ -1136,7 +1132,7 @@ async def charts_tab(q, charts_list, legend_labels):
     box = ["first", "first", "second", "second"]
     cnt = 0
     for k1 in ["meta", "train", "validation"]:
-        if all([k1 not in charts for charts in charts_list]):
+        if all(k1 not in charts for charts in charts_list):
             continue
 
         all_second_keys: Set = set()
@@ -1154,8 +1150,6 @@ async def charts_tab(q, charts_list, legend_labels):
         for k2 in list_all_second_keys:
             logger.info(f"{k1} {k2}")
 
-            items = []
-
             tooltip = ""
             if k1 == "meta" and k2 == "lr":
                 tooltip = "Current learning rate throughout the training process."
@@ -1169,7 +1163,7 @@ async def charts_tab(q, charts_list, legend_labels):
                     "Current validation loss throughout the training process. "
                     "Loss is calculated as the average of all validation batches. "
                 )
-            elif k1 == "validation" and k2 != "loss":
+            elif k1 == "validation":
                 tooltip = (
                     "Current validation metric throughout the training process. "
                     "Metric is calculated on full validation set predictions."
@@ -1181,8 +1175,7 @@ async def charts_tab(q, charts_list, legend_labels):
             if k2 == "loss":
                 title = title.replace("LOSS", "BATCH LOSS")
 
-            items.append(ui.text(title, tooltip=tooltip))
-
+            items = [ui.text(title, tooltip=tooltip)]
             rows = []
 
             max_samples = q.client["chart_plot_max_points"]
@@ -1372,8 +1365,7 @@ async def config_import_uploaded_file(q: Q):
 
 
 async def show_message(q, msg_key, page, idx, msg_type):
-    info = q.client[msg_key]
-    if info:
+    if info := q.client[msg_key]:
         q.page[page].items[idx].message_bar.text = info
         q.page[page].items[idx].message_bar.type = msg_type
         q.client[msg_key] = ""

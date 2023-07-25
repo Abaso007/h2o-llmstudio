@@ -44,20 +44,17 @@ class WaveTheme:
         return "WaveTheme"
 
     def get_value_by_key(self, q: Q, key: str):
-        value = (
+        return (
             self._theme_colors["dark"][key]
             if q.client.theme_dark
             else self._theme_colors["light"][key]
         )
-        return value
 
     def get_primary_color(self, q: Q):
-        primary_color = self.get_value_by_key(q, "primary")
-        return primary_color
+        return self.get_value_by_key(q, "primary")
 
     def get_background_color(self, q: Q):
-        background_color = self.get_value_by_key(q, "background_color")
-        return background_color
+        return self.get_value_by_key(q, "background_color")
 
 
 wave_theme = WaveTheme()
@@ -115,15 +112,16 @@ def ui_table_from_df(
     if not max_widths:
         max_widths = {}
 
-    cell_types = {}
-    for col in tags:
-        cell_types[col] = ui.tag_table_cell_type(
+    cell_types = {
+        col: ui.tag_table_cell_type(
             name="tags",
             tags=[
                 ui.tag(label=state, color=wave_theme.states[state])
                 for state in wave_theme.states
             ],
         )
+        for col in tags
+    }
     for col in progresses:
         cell_types[col] = ui.progress_table_cell_type(
             wave_theme.get_primary_color(q),
@@ -133,16 +131,16 @@ def ui_table_from_df(
         ui.table_column(
             name=str(x),
             label=str(x),
-            sortable=True if x in sortables else False,
-            filterable=True if x in filterables else False,
-            searchable=True if x in searchables else False,
+            sortable=x in sortables,
+            filterable=x in filterables,
+            searchable=x in searchables,
             data_type="number"
             if x in numerics
             else ("time" if x in times else "string"),
-            cell_type=cell_types[x] if x in cell_types.keys() else None,
-            min_width=min_widths[x] if x in min_widths.keys() else None,
-            max_width=max_widths[x] if x in max_widths.keys() else None,
-            link=True if x == link_col else False,
+            cell_type=cell_types.get(x, None),
+            min_width=min_widths.get(x, None),
+            max_width=max_widths.get(x, None),
+            link=x == link_col,
             cell_overflow="tooltip",
         )
         for x in df.columns.values
@@ -267,7 +265,7 @@ def wave_utils_error_card(
     if not q.app.wave_utils_stack_trace_str:
         q.app.wave_utils_stack_trace_str = "### stacktrace\n" + "\n".join(stack_trace)
 
-    card = ui.form_card(
+    return ui.form_card(
         box=box,
         items=[
             ui.stats(
@@ -283,11 +281,15 @@ def wave_utils_error_card(
                 justify="center",
             ),
             ui.separator(),
-            ui.text_l(content="<center>Apologies for the inconvenience!</center>"),
+            ui.text_l(
+                content="<center>Apologies for the inconvenience!</center>"
+            ),
             ui.buttons(
                 items=[
                     ui.button(name="home", label="Restart", primary=True),
-                    ui.button(name="report_error", label="Report", primary=True),
+                    ui.button(
+                        name="report_error", label="Report", primary=True
+                    ),
                 ],
                 justify="center",
             ),
@@ -305,13 +307,15 @@ def wave_utils_error_card(
             ui.text_xs(content=q_client_str, visible=False),
             ui.text_xs(content=q_events_str, visible=False),
             ui.text_xs(content=q_args_str, visible=False),
-            ui.text_xs(content=q.app.wave_utils_stack_trace_str, visible=False),
+            ui.text_xs(
+                content=q.app.wave_utils_stack_trace_str, visible=False
+            ),
             ui.text_xs(content=f"### Error\n {error}", visible=False),
-            ui.text_xs(content=f"### Git Version\n {git_version}", visible=False),
+            ui.text_xs(
+                content=f"### Git Version\n {git_version}", visible=False
+            ),
         ],
     )
-
-    return card
 
 
 async def wave_utils_handle_error(q: Q, error: Exception):

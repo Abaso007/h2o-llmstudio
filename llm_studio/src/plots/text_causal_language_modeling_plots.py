@@ -178,7 +178,7 @@ class Plots:
     def plot_validation_predictions(
         cls, val_outputs: Dict, cfg: Any, val_df: pd.DataFrame, mode: str
     ) -> PlotData:
-        assert mode in ["validation"]
+        assert mode in {"validation"}
 
         metrics = val_outputs["metrics"]
         best_samples, worst_samples = get_best_and_worst_sample_idxs(

@@ -58,7 +58,7 @@ def flatten_dict(nested, sep="/"):
 
 def stack_dicts(stats_dicts):
     """Stack the values of a dict."""
-    results = dict()
+    results = {}
     for k in stats_dicts[0]:
         stats_list = [torch.flatten(d[k]) for d in stats_dicts]
         results[k] = pad_sequence(stats_list, batch_first=True, padding_value=-1)
@@ -70,8 +70,7 @@ def logprobs_from_logits(logits, labels):
     See: https://github.com/pytorch/pytorch/issues/563#issuecomment-330103591
     """
     logp = F.log_softmax(logits, dim=2)
-    logpy = torch.gather(logp, 2, labels.unsqueeze(2)).squeeze(-1)
-    return logpy
+    return torch.gather(logp, 2, labels.unsqueeze(2)).squeeze(-1)
 
 
 def masked_mean(values, mask, axis=None):
@@ -107,20 +106,18 @@ def clip_by_value(x, tensor_min, tensor_max):
     Tensor extenstion to torch.clamp
     https://github.com/pytorch/pytorch/issues/2793#issuecomment-428784713
     """
-    clipped = torch.max(torch.min(x, tensor_max), tensor_min)
-    return clipped
+    return torch.max(torch.min(x, tensor_max), tensor_min)
 
 
 def entropy_from_logits(logits: torch.Tensor):
     """Calculate entropy from logits."""
     pd = torch.nn.functional.softmax(logits, dim=-1)
-    entropy = torch.logsumexp(logits, dim=-1) - torch.sum(pd * logits, dim=-1)
-    return entropy
+    return torch.logsumexp(logits, dim=-1) - torch.sum(pd * logits, dim=-1)
 
 
 def stats_to_np(stats_dict):
     """Cast all torch.tensors in dict to numpy arrays."""
-    new_dict: Dict[str, Any] = dict()
+    new_dict: Dict[str, Any] = {}
     for k, v in stats_dict.items():
         if isinstance(v, torch.Tensor):
             new_dict[k] = v.detach().cpu()
@@ -321,7 +318,7 @@ class PPOTrainer(PyTorchModelHubMixin):
             bs, queries, responses, scores
         )
 
-        timing = dict()
+        timing = {}
         t0 = time.time()
 
         t = time.time()
@@ -362,7 +359,7 @@ class PPOTrainer(PyTorchModelHubMixin):
         }
 
         def collator(data: List[Dict[str, torch.Tensor]]):
-            return_dict: Dict[str, Any] = dict()
+            return_dict: Dict[str, Any] = {}
             keys = data[0].keys()
             for key in keys:
                 if key in ["queries", "responses"]:

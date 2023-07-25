@@ -289,7 +289,6 @@ class Model(nn.Module):
         if self.training and self.cfg.training.use_rlhf:
             kwargs["output_hidden_states"] = True
 
-        mask_key = "attention_mask"
         pad_keys = [
             "input_ids",
             "attention_mask",
@@ -298,6 +297,7 @@ class Model(nn.Module):
         ]
 
         if padding:
+            mask_key = "attention_mask"
             batch = batch_padding(
                 self.cfg,
                 batch,

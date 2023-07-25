@@ -24,11 +24,12 @@ logger = logging.getLogger(__name__)
 def sacrebleu_score(
     cfg: Any, results: Dict, val_df: pd.DataFrame, metric: Metric
 ) -> NDArray:
-    scores = []
-    for predicted_text, target_text in zip(
-        results["predicted_text"], results["target_text"]
-    ):
-        scores.append(metric.sentence_score(predicted_text, [target_text]).score)
+    scores = [
+        metric.sentence_score(predicted_text, [target_text]).score
+        for predicted_text, target_text in zip(
+            results["predicted_text"], results["target_text"]
+        )
+    ]
     return np.array(scores)
 
 
@@ -119,9 +120,7 @@ def gpt_score(
     scores = [x[0] for x in ret]
     explanations = [x[1] for x in ret]
 
-    if raw_results:
-        return np.array(scores), explanations
-    return np.mean(scores)
+    return (np.array(scores), explanations) if raw_results else np.mean(scores)
 
 
 class Perplexity(nn.Module):
@@ -135,9 +134,10 @@ class Perplexity(nn.Module):
         shift_logits = logits[..., :-1, :].contiguous()
         shift_labels = labels[..., 1:].contiguous()
 
-        perplexity = []
-        for i in range(labels.shape[0]):
-            perplexity.append(self.loss_fn(shift_logits[i], shift_labels[i]))
+        perplexity = [
+            self.loss_fn(shift_logits[i], shift_labels[i])
+            for i in range(labels.shape[0])
+        ]
         perplexity = torch.stack(perplexity, dim=0)
         perplexity = torch.exp(perplexity)
         if self.reduce:
