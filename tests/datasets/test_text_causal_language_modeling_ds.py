@@ -211,15 +211,13 @@ def test_getitem():
 
     result = dataset[0]
     assert isinstance(result, dict)
-    assert set(result.keys()) == set(
-        [
-            "labels",
-            "input_ids",
-            "attention_mask",
-            "prompt_input_ids",
-            "prompt_attention_mask",
-        ]
-    )
+    assert set(result.keys()) == {
+        "labels",
+        "input_ids",
+        "attention_mask",
+        "prompt_input_ids",
+        "prompt_attention_mask",
+    }
 
     dataset.tokenizer.convert_ids_to_tokens(result["input_ids"])
 
