@@ -43,7 +43,6 @@ generate_text = pipeline(
     model="{{repo_id}}",
     torch_dtype="auto",
     trust_remote_code=True,
-    use_fast={{use_fast}},
     device_map={"": "cuda:0"},
     token=True,
 )
@@ -80,14 +79,13 @@ You may also construct the pipeline from the loaded model and tokenizer yourself
 ```python
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-model_name = "{{repo_id}}"  # either local folder or huggingface model name
+model_name = "{{repo_id}}"  # either local folder or Hugging Face model name
 # Important: The prompt needs to be in the same format the model was trained with.
 # You can find an example prompt in the experiment logs.
 messages = {{sample_messages}}
 
 tokenizer = AutoTokenizer.from_pretrained(
     model_name,
-    use_fast={{use_fast}},
     trust_remote_code={{trust_remote_code}},
 )
 model = AutoModelForCausalLM.from_pretrained(

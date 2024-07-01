@@ -1,4 +1,5 @@
 import codecs
+import json
 import logging
 import os
 from typing import Any
@@ -34,12 +35,22 @@ def get_texts(df, cfg, separator=None):
 
 
 def get_tokenizer(cfg: Any):
+
     kwargs = dict(
         revision=cfg.environment.huggingface_branch,
-        use_fast=cfg.tokenizer.use_fast,
         trust_remote_code=cfg.environment.trust_remote_code,
         token=os.getenv("HUGGINGFACE_TOKEN"),
     )
+
+    # We will be able to remove this after
+    # https://github.com/huggingface/transformers/pull/30964
+    tokenizer_class = AutoTokenizer.from_pretrained(
+        cfg.llm_backbone, **kwargs
+    ).__class__
+    if tokenizer_class.__name__ in ["LlamaTokenizer", "LlamaTokenizerFast"]:
+        kwargs["from_slow"] = True
+
+    kwargs.update(json.loads(cfg.tokenizer.tokenizer_kwargs.strip()))
 
     try:
         tokenizer = AutoTokenizer.from_pretrained(cfg.llm_backbone, **kwargs)
@@ -52,7 +63,8 @@ def get_tokenizer(cfg: Any):
             tokenizer = AutoTokenizer.from_pretrained(cfg.llm_backbone, **kwargs)
         elif "not a string" in error_message:
             # https://github.com/h2oai/h2o-llmstudio/issues/623
-            kwargs.pop("add_prefix_space")
+            kwargs.pop("add_prefix_space", None)
+            kwargs.pop("from_slow", None)
             tokenizer = AutoTokenizer.from_pretrained(cfg.llm_backbone, **kwargs)
         else:
             raise e

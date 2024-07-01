@@ -61,7 +61,12 @@ from llm_studio.src.utils.modeling_utils import (
     save_predictions,
     wrap_model_distributed,
 )
-from llm_studio.src.utils.utils import kill_ddp_processes, set_environment, set_seed
+from llm_studio.src.utils.utils import (
+    create_symlinks_in_parent_folder,
+    kill_ddp_processes,
+    set_environment,
+    set_seed,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -371,17 +376,21 @@ def run_train(
 
             # Validation loop
             if (itr + 1) % evaluation_step == 0:
-                if cfg.training.evaluation_epochs == 1:
-                    progress_bar.close()
-
                 # TODO: Move back after fixing slow generation of deepspeed.
                 if cfg.training.save_checkpoint == "last":
-                    checkpoint_path = cfg.output_directory
                     if cfg.environment._local_rank == 0:
                         logger.info(
-                            f"Saving last model checkpoint to {checkpoint_path}"
+                            f"Saving last model checkpoint to {cfg.output_directory}"
                         )
+                    save_checkpoint(model=model, path=cfg.output_directory, cfg=cfg)
+                elif cfg.training.save_checkpoint == "each_evaluation_epoch":
+                    checkpoint_path = os.path.join(
+                        cfg.output_directory, f"epoch_{epoch}_step_{itr}"
+                    )
+                    if cfg.environment._local_rank == 0:
+                        logger.info(f"Saving model checkpoint to {checkpoint_path}")
                     save_checkpoint(model=model, path=checkpoint_path, cfg=cfg)
+                    create_symlinks_in_parent_folder(checkpoint_path)
 
                 val_loss, val_metric = run_eval(
                     cfg=cfg, model=model, val_dataloader=val_dataloader, val_df=val_df
@@ -389,14 +398,13 @@ def run_train(
 
                 if cfg.training.save_checkpoint == "best":
                     if objective_op(val_metric, best_val_metric):
-                        checkpoint_path = cfg.output_directory
                         if cfg.environment._local_rank == 0:
                             logger.info(
                                 f"Saving best model checkpoint: "
                                 f"val_{cfg.prediction.metric} {best_val_metric:.5} -> "
-                                f"{val_metric:.5} to {checkpoint_path}"
+                                f"{val_metric:.5} to {cfg.output_directory}"
                             )
-                        save_checkpoint(model=model, path=checkpoint_path, cfg=cfg)
+                        save_checkpoint(model=model, path=cfg.output_directory, cfg=cfg)
                         best_val_metric = val_metric
 
                 model.train()
@@ -419,18 +427,12 @@ def run_train(
     return val_loss, val_metric
 
 
-def run(cfg: Any) -> None:
+def run(cfg: Any) -> float:
     """Runs the routine.
 
     Args:
         cfg: config object with all the hyperparameters
     """
-
-    if cfg.problem_type == "text_rlhf_language_modeling":
-        raise DeprecationWarning(
-            "text_rlhf_language_modeling is deprecated. "
-            "Please use DPO Modeling instead."
-        )
 
     os.makedirs(cfg.output_directory, exist_ok=True)
 
@@ -570,13 +572,6 @@ def run(cfg: Any) -> None:
     optimizer = get_optimizer(model=model, cfg=cfg)
     scheduler = get_scheduler(cfg=cfg, optimizer=optimizer, epoch_steps=epoch_steps)
 
-    if getattr(cfg.architecture, "force_embedding_gradients"):
-        for module in model.modules():
-            if isinstance(module, torch.nn.Embedding):
-                for param in module.parameters():
-                    param.requires_grad = True
-                    param.data = param.data.float()
-
     if cfg.environment._distributed:
         (
             model,
@@ -678,6 +673,8 @@ def run(cfg: Any) -> None:
                 "%H:%M:%S", time.gmtime(float(time_took))
             )
         write_flag(flag_path, "info", f"Runtime: {time_took_formatted}")
+
+    return val_metric
 
 
 if __name__ == "__main__":

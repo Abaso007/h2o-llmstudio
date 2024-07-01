@@ -13,14 +13,13 @@ pip install transformers=={{transformers_version}}
 ```python
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
-model_name = "{{repo_id}}"  # either local folder or huggingface model name
+model_name = "{{repo_id}}"  # either local folder or Hugging Face model name
 # Important: The prompt needs to be in the same format the model was trained with.
 # You can find an example prompt in the experiment logs.
 prompt = "{{text_prompt_start}}How are you?{{end_of_sentence}}{{text_answer_separator}}"
 
 tokenizer = AutoTokenizer.from_pretrained(
     model_name,
-    use_fast={{use_fast}},
     trust_remote_code={{trust_remote_code}},
 )
 model = AutoModelForSeq2SeqLM.from_pretrained(

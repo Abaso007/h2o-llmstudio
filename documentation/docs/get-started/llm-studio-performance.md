@@ -61,7 +61,6 @@ The runtimes were gathered using the default parameters.
 ```
 architecture:
     backbone_dtype: int4
-    force_embedding_gradients: false
     gradient_checkpointing: true
     intermediate_dropout: 0.0
     pretrained: true
@@ -131,17 +130,14 @@ prediction:
     num_history: 4
     repetition_penalty: 1.2
     stop_tokens: ''
-    temperature: 0.3
+    temperature: 0.0
     top_k: 0
     top_p: 1.0
 problem_type: text_causal_language_modeling
 tokenizer:
     add_prompt_answer_tokens: false
     max_length: 512
-    max_length_answer: 256
-    max_length_prompt: 256
     padding_quantile: 1.0
-    use_fast: true
 training:
     batch_size: 2
     differential_learning_rate: 1.0e-05

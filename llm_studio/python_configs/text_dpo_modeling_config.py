@@ -37,12 +37,21 @@ class ConfigDPODataset(ConfigNLPCausalLMDataset):
         super().__post_init__()
         self._possible_values["rejected_prompt_column"] = possible_values.Columns(
             prefer_with=lambda column: column
-            in ("rejected_input", "rejected_prompt", "rejected_instruction"),
+            in (
+                "rejected_input",
+                "rejected_prompt",
+                "rejected_instruction",
+                "rejected_question",
+            ),
             add_none=True,
         )
         self._possible_values["rejected_answer_column"] = possible_values.Columns(
             prefer_with=lambda column: column
-            in ("rejected_answer", "rejected_response")
+            in (
+                "rejected_answer",
+                "rejected_response",
+                "rejected",
+            )
         )
 
         self._visibility["limit_chained_samples"] = -1
@@ -66,7 +75,6 @@ class ConfigDPOTraining(ConfigNLPCausalLMTraining):
         super().__post_init__()
         self._possible_values["beta"] = possible_values.Number(0.05, 1.0, 0.05)
         self._order.insert("beta", after="learning_rate")
-        self._visibility["lora"] = -1
 
 
 @dataclass
@@ -83,9 +91,8 @@ class ConfigDPOPLogging(ConfigNLPCausalLMLogging):
 class ConfigProblemBase(DefaultConfigProblemBase):
     output_directory: str = f"output/{os.path.basename(__file__).split('.')[0]}"
     experiment_name: str = field(default_factory=generate_experiment_name)
-    _parent_experiment: str = ""
     # 7b model may be unstable (NaN loss)
-    llm_backbone: str = "h2oai/h2ogpt-4096-llama2-13b-chat"
+    llm_backbone: str = "h2oai/h2o-danube2-1.8b-sft"
 
     dataset: ConfigDPODataset = field(default_factory=ConfigDPODataset)
     tokenizer: ConfigNLPCausalLMTokenizer = field(

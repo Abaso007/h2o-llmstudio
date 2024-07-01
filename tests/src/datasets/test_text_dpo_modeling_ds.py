@@ -143,15 +143,15 @@ def test_dataset_label_is_correct(df_with_conversation_chain_ids):
         )
 
         assert (
-            prompt == f"<|prompt|>prompt {idx * 5 + 1} "
-            f"<|answer|> response {idx * 5 + 1} "
-            f"<|prompt|>prompt {idx * 5 + 2} "
-            f"<|answer|> response {idx * 5 + 2} "
-            f"<|prompt|>prompt {idx * 5 + 3} "
-            f"<|answer|> response {idx * 5 + 3} "
-            f"<|prompt|>prompt {idx * 5 + 4} "
-            f"<|answer|> response {idx * 5 + 4} "
-            f"<|prompt|>prompt {idx * 5 + 5} "
+            prompt == f"<|prompt|>prompt {idx * 5 + 1}"
+            f"<|answer|>response {idx * 5 + 1}"
+            f"<|prompt|>prompt {idx * 5 + 2}"
+            f"<|answer|>response {idx * 5 + 2}"
+            f"<|prompt|>prompt {idx * 5 + 3}"
+            f"<|answer|>response {idx * 5 + 3}"
+            f"<|prompt|>prompt {idx * 5 + 4}"
+            f"<|answer|>response {idx * 5 + 4}"
+            f"<|prompt|>prompt {idx * 5 + 5}"
             "<|answer|>"
         )
         assert chosen_response == f"chosen_response {idx * 5 + 5}"
@@ -253,9 +253,7 @@ def generate_causal_lm_model_input_ids(df):
             prompt_column=("prompt",),
             answer_column="answer",
         ),
-        tokenizer=ConfigNLPCausalLMTokenizer(
-            max_length_prompt=256, max_length_answer=256, max_length=512
-        ),
+        tokenizer=ConfigNLPCausalLMTokenizer(max_length=512),
     )
     dataset = CausalLMCustomDataset(df, cfg, mode="train")
     return dataset[0]
@@ -277,9 +275,7 @@ def test_dataset_prompt_ids_are_the_same_as_for_causal_language_modeling(
             answer_column="answer",
             rejected_answer_column="rejected_answer",
         ),
-        tokenizer=ConfigNLPCausalLMTokenizer(
-            max_length_prompt=256, max_length_answer=256, max_length=512
-        ),
+        tokenizer=ConfigNLPCausalLMTokenizer(max_length=512),
     )
     dataset = CustomDataset(df_single_prompt, cfg, mode="train")
     generated_text = dataset[0]

@@ -20,7 +20,7 @@ def get_size(x):
         return 2**31
 
 
-version = "1.6.0-dev"
+version = "1.9.0-dev"
 
 try:
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -67,8 +67,11 @@ default_cfg = {
     "dataset_keys": [
         "train_dataframe",
         "validation_dataframe",
+        "system_column",
         "prompt_column",
+        "rejected_prompt_column",
         "answer_column",
+        "rejected_answer_column",
         "parent_id_column",
     ],
     "dataset_trigger_keys": [
